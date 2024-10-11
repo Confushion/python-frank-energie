@@ -17,6 +17,7 @@ from .models import (
     MonthSummary,
     SmartBatteries,
     SmartBatterySessions,
+    SmartBatterySession,
 )
 
 
@@ -596,6 +597,70 @@ class FrankEnergie:
         }
 
         return SmartBatterySessions.from_dict(await self._query(query))
+
+    async def smart_battery_session(
+            self, device_id: str, date: date
+    ) -> SmartBatterySession:
+        """get details of a smart battery session for a device.
+
+        Returns a list of intervals for a smart battery session.
+
+        Full query:
+        query SmartBatterySession($date: String!, $deviceId: String!) {
+            smartBatterySession(
+                date: $date
+                deviceId: $deviceId
+          ) {
+            deviceId
+            date
+            intervals {
+              endCharge
+              epexPrice
+              imbalancePrice
+              intervalEnd
+              intervalStart
+              startCharge
+              tradingResult
+              action
+            }
+            tradingResult
+          }
+        }
+        """
+        if self._auth is None:
+            raise AuthRequiredException
+
+        query = {
+            "query": """
+                query SmartBatterySession($date: String!, $deviceId: String!) {
+                    smartBatterySession(
+                      date: $date
+                      deviceId: $deviceId
+                    ) {
+                      deviceId
+                      date
+                      intervals {
+                        endCharge
+                        epexPrice
+                        imbalancePrice
+                        intervalEnd
+                        intervalStart
+                        startCharge
+                        tradingResult
+                        action
+                      }
+                      tradingResult
+                    }
+                  }
+                """,
+            "operationName": "SmartBatterySession",
+            "variables": {
+                "deviceId": device_id,
+                "date": str(date),
+            },
+        }
+
+        return SmartBatterySession.from_dict(await self._query(query))
 
     @property
     def is_authenticated(self) -> bool:
