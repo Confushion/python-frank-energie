@@ -501,16 +501,16 @@ class SmartBatterySessions:
         if not payload:
             raise RequestException("Unexpected response")
 
-        smart_battery_session_data = payload.get("smartBatterySessions")
+        smart_battery_sessions_data = payload.get("smartBatterySessions")
         return SmartBatterySessions(
-            deviceId=smart_battery_session_data.get("deviceId"),
-            periodEndDate=smart_battery_session_data.get("periodEndDate"),
-            periodStartDate=smart_battery_session_data.get("periodStartDate"),
-            periodTradingResult=smart_battery_session_data.get("periodTradingResult"),
-            totalTradingResult=smart_battery_session_data.get("totalTradingResult"),
+            deviceId=smart_battery_sessions_data.get("deviceId"),
+            periodEndDate=smart_battery_sessions_data.get("periodEndDate"),
+            periodStartDate=smart_battery_sessions_data.get("periodStartDate"),
+            periodTradingResult=smart_battery_sessions_data.get("periodTradingResult"),
+            totalTradingResult=smart_battery_sessions_data.get("totalTradingResult"),
             sessions=[
                 SmartBatterySessions.Session.from_dict(session)
-                for session in smart_battery_session_data.get("sessions")
+                for session in smart_battery_sessions_data.get("sessions")
             ],
         )
 
@@ -525,10 +525,73 @@ class SmartBatterySessions:
         @staticmethod
         def from_dict(payload: dict[str, str]) -> SmartBatterySessions.Session:
             """Parse the sessions payload from the SmartBatterySessions query result."""
-            _LOGGER.debug("DeliverySites %s", payload)
+            _LOGGER.debug("SmartBatterySessions.Session %s", payload)
 
             return SmartBatterySessions.Session(
                 date=payload.get("date"),
                 tradingResult=payload.get("tradingResult"),
                 cumulativeTradingResult=payload.get("cumulativeTradingResult"),
+            )
+
+
+@dataclass
+class SmartBatterySession:
+    """Detailed data of a battery session, for a given battery."""
+
+    deviceId: str
+    date: datetime
+    tradingResult: float
+    intervals: list[Interval]
+
+    @staticmethod
+    def from_dict(data: dict[str, str]) -> SmartBatterySession:
+        """Parse the response from the SmartBatterySession query."""
+        _LOGGER.debug("SmartBatterySession %s", data)
+
+        if errors := data.get("errors"):
+            raise RequestException(errors[0]["message"])
+
+        payload = data.get("data")
+        if not payload:
+            raise RequestException("Unexpected response")
+
+        smart_battery_session_data = payload.get("smartBatterySession")
+        return SmartBatterySession(
+            deviceId=smart_battery_session_data.get("deviceId"),
+            date=smart_battery_session_data.get("date"),
+            tradingResult=smart_battery_session_data.get("tradingResult"),
+            intervals=[
+                SmartBatterySession.Interval.from_dict(interval)
+                for interval in smart_battery_session_data.get("intervals")
+            ],
+        )
+
+    @dataclass
+    class Interval:
+        """A battery session interval."""
+
+        startCharge: float
+        endCharge: float
+        epexPrice: float
+        imbalancePrice: float
+        intervalEnd: datetime
+        intervalStart: datetime
+        tradingResult: float
+        action: str
+
+        @staticmethod
+        def from_dict(payload: dict[str, str]) -> SmartBatterySession.Interval:
+            """Parse the sessions payload from the SmartBatterySessions query result."""
+            _LOGGER.debug("SmartBatterySession.Interval %s", payload)
+
+            return SmartBatterySession.Interval(
+
+                startCharge=payload.get("startCharge"),
+                endCharge=payload.get("endCharge"),
+                epexPrice=payload.get("epexPrice"),
+                imbalancePrice=payload.get("imbalancePrice"),
+                intervalEnd=payload.get("intervalEnd"),
+                intervalStart=payload.get("intervalStart"),
+                tradingResult=payload.get("tradingResult"),
+                action=payload.get("action"),
             )
